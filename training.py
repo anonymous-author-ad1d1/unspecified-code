@@ -43,9 +43,9 @@ class TrainConfig:
     is_ev_based: bool
     unbucketed_loss_freq: int = 10
     neptune_run: Any = None
-    n_players = 2
-    n_buckets = 1000  # not used in the code as data are random
-    dataset_id = 1  # not used in the code as data are random
+    n_players: int = 2
+    n_buckets: int = 1000  # not used in the code as data are random
+    dataset_id: int = 1  # not used in the code as data are random
 
 
 class TrainSchedule:
@@ -194,16 +194,15 @@ class TrainSchedule:
                 bucketed_loss = self._mask_loss_tensor(bucketed_loss, bucketed_mask, per_sample=True).sum()
                 total_buck_loss += bucketed_loss
 
-                unbuck_pred_vals = unbucketization(predicted_values, boards) / pots
+                unbuck_pred_vals = unbucketization(predicted_values, boards)
                 if self.config.is_ev_based:
                     unbuck_target = EVs
                 else:
                     unbuck_target = cfvs
-                unbuck_target /= pots
 
                 unbuck_mask = (ranges > 0).to(self.device).to(torch.float32)
 
-                mse_unbuck_loss_per_sph = self.MSELoss(unbuck_pred_vals, unbuck_target)  # (batch_size, n_players, n_hands)
+                mse_unbuck_loss_per_sph = self.MSELoss(unbuck_pred_vals / pots * 100, unbuck_target / pots * 100)  # (batch_size, n_players, n_hands)
                 mse_unbuck_loss_per_sp = self._mask_loss_tensor(
                     mse_unbuck_loss_per_sph, unbuck_mask, per_sample=True
                 )  # (batch_size, n_players)
